@@ -29,7 +29,7 @@ class RAGTopKEnv(gym.Env):
             retriever : object
                 Must have embedder.encode_queries and retrieve.
             k_candidates : List[int], optional
-                Possible k values ​​(default [0..5]).
+                Possible k values (default [0..5]).
             max_docs : int, optional
                 Maximum number of documents to query.
             cache_precompute : bool, optional
@@ -66,26 +66,26 @@ class RAGTopKEnv(gym.Env):
         k_candidates: Optional[List[int]],
         max_docs: int,
     ) -> None:
-        """Kiểm tra kiểu và giá trị của tham số khởi tạo."""
+        """Validate types and values of initialization parameters."""
         if not isinstance(dataset, list) or not dataset:
-            raise ValueError("Dataset phải là list và không được rỗng.")
+            raise ValueError("Dataset must be a list and cannot be empty.")
         if k_candidates is not None:
             if (
                 not isinstance(k_candidates, list)
                 or not all(isinstance(k, int) and k >= 0 for k in k_candidates)
             ):
-                raise TypeError("k_candidates phải là List[int] không âm.")
+                raise TypeError("k_candidates must be a List[int] of non-negative values.")
         if not isinstance(max_docs, int) or max_docs <= 0:
-            raise ValueError("max_docs phải là số nguyên dương.")
+            raise ValueError("max_docs must be a positive integer.")
         if not hasattr(retriever, "retrieve") or not hasattr(
             retriever, "embedder"
         ) or not hasattr(retriever.embedder, "encode_queries"):
             raise TypeError(
-                "Retriever phải có phương thức retrieve và embedder.encode_queries."
+                "Retriever must have retrieve method and embedder.encode_queries."
             )
 
     def cache_all(self) -> None:
-        """Tiền xử lý toàn bộ queries, retrieve docs, tính state và rewards."""
+        """Preprocess all queries, retrieve docs, compute states and rewards."""
         queries, gold_ids_list = zip(*self.dataset)
         logger.info("Encoding %d queries...", len(queries))
         query_embs = (
@@ -108,7 +108,7 @@ class RAGTopKEnv(gym.Env):
             state = np.concatenate([query_emb, doc_feats], axis=0).astype(np.float32)
             self.precomputed.append((state, rewards, results, gold_ids))
 
-        # Cập nhật observation_space sau khi biết state_dim cố định
+        # Update observation_space after knowing fixed state_dim
         self.state_dim = self.precomputed[0][0].shape[0]
         self.observation_space = spaces.Box(
             low=-np.inf,
@@ -131,13 +131,13 @@ class RAGTopKEnv(gym.Env):
         state : np.ndarray
         """
         if not self.precomputed:
-            raise RuntimeError("Phải gọi cache_all trước khi reset().")
+            raise RuntimeError("Must call cache_all before reset().")
         if idx is None:
             self._current_idx = getattr(self, "_current_idx", -1) + 1
             self._current_idx %= len(self.dataset)
         else:
             if not (0 <= idx < len(self.dataset)):
-                raise IndexError("idx ngoài phạm vi.")
+                raise IndexError("idx out of range.")
             self._current_idx = idx
 
         state, rewards, docs, gold_ids = self.precomputed[self._current_idx]
@@ -165,7 +165,7 @@ class RAGTopKEnv(gym.Env):
             {'k', 'gold_ids', 'predicted_ids'}.
         """
         if action < 0 or action >= len(self.k_candidates):
-            raise IndexError("Action ngoài phạm vi k_candidates.")
+            raise IndexError("Action out of k_candidates range.")
         k = self.k_candidates[action]
         topk = self._current_docs[:k]
         predicted_ids = {str(item[0]) for item in topk}
@@ -236,10 +236,10 @@ class RAGTopKEnv(gym.Env):
             # 3) cost term
             cost = k / Kmax
 
-            # 4) base reward kết hợp
+            # 4) combined base reward
             base = alpha * recall_k + (1 - alpha) * rr_k - gamma * cost
 
-            # 5) penalty mềm nếu k > k*
+            # 5) soft penalty if k > k*
             if k > k_star:
                 base *= math.exp(-adaptive_beta * (k - k_star))
 
