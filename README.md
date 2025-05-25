@@ -1,4 +1,4 @@
-# FLAIR: Flexible Allocation of Informative Retrieval via Reinforcement Learning
+# FLAIR: Flexible Learning of Adaptive top-k Retrieval via Reinforcement Learning
 
 FLAIR is a reinforcement learning framework for optimizing Retrieval-Augmented Generation (RAG) systems. It trains RL agents to dynamically select the optimal number of documents (top-k) for retrieval, improving both retrieval quality and computational efficiency.
 
